@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html land="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stockfish Game Review</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- jQuery (required by chessboard.js) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- chessboard.js - use these exact links -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+
+    <!-- chess.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+</head>
+    <body>
+        <div class="column-container">
+            <h1>Dylan's Epic Game Review</h1>
+            <div class="row-container" style="width: fit-content;">
+            
+                <!-- Eval bar (vertical) -->
+                <div id="eval-bar" class="eval-bar">
+                    <div id="eval-white" class="eval-bar-white"></div>
+                    <p id="p-eval-text" class="eval-text">0.0</p>
+                </div>
+
+                <div id="board-wrapper" style="position: relative; width: 500px;">
+                    <div id="board1" style="width: 500px"></div>
+                    <canvas id="canvas-chessboard" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+                </div>
+                <div class="column-container" style="display: flex; flex-direction: column;">
+                    <h2>Game Info</h2>
+                    <p id="p-current-move">Current move: </p>
+                    <p id="p-best-move">Best move: </p>
+                    <div id="slider-wrapper" style="display: flex; align-items: center; gap: 8px;">
+                        <span id="depth-label" style="font-family: monospace; color: #888; font-size: 12px;">Depth: 14</span>
+                        <input type="range" id="depth-slider"
+                            min="5" max="18" value="14"
+                            style="flex: 1; cursor: pointer; accent-color: #4a90d9;">
+                    </div>
+                    <div id="spinner" style="display: none">
+                        <div class="spinner-circle"></div>
+                    </div>
+                    <div class="row-container" style="margin-top: auto; width: fit-content;">
+                        <textarea id="input-pgn" rows="10" cols="40"placeholder="Enter PGN string to review a new game"></textarea>
+                        <button id="btn-load-pgn" onclick="loadPGN()">Load Game</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row-container" style="width: 650px; justify-content: center;">
+                <button id="btn-prev" onclick="prevMove()">Previous Move</button>
+                <button id="btn-next" onclick="nextMove()">Next Move</button>
+                <button id="btn-reset" onclick="resetGame()">Reset Game</button>
+            </div>
+        </div>
+    </body>
+
+    <script src="review.js"></script>
+</html>

@@ -1,0 +1,135 @@
+*{
+    margin: 0px;
+    padding: 0px;
+    font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    box-sizing: border-box;
+}
+:root {
+    --color-primary:       #1a73e8;   /* main brand/action color */
+    --color-primary-hover: #1669c1;
+    --color-secondary:     #e91e63;   /* accent or supporting color */
+    --color-background:    #ffffff;
+    --color-surface:       #f5f5f5;   /* cards, panels, etc. */
+    --color-surface-colored: #38b6ff2f; /* Colored surface for contrast */
+    --color-border:        #cccccc;
+    --color-text:          #393939;
+    --color-muted:         #777777;
+    --color-error:         #d32f2f;
+    --color-success:       #388e3c;
+    --color-warning:       #fbc02d;
+    --color-button:        #3b668a; /* Button color */
+    --color-button-hover:  #21394d; /* Button hover color */
+}
+
+p{
+  white-space: pre-line;;
+}
+
+.row {
+    display: flex;
+    gap: 10px;
+}
+.title-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.row-container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: auto;
+  gap: 20px; /* Space between columns */
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+.center-items-horizontally {
+  justify-content: center;
+}
+.center-items-vertically {
+  align-items: center;
+}
+
+.column-container{
+  border: 1px solid #ccc;
+  flex: 1;
+  padding: 10px;
+  background-color: rgb(255, 255, 255);
+  color: var(--color-text);
+  position: relative;
+  border-radius: 10px;
+}
+.column-container.primary{
+    flex: 2;
+}
+.column-container.secondary{
+    margin: 2px;
+    width: fit-content;
+}
+.row-item {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin: 10px 0;
+  height: auto;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;  
+  justify-content:space-between;
+}
+
+.eval-text {
+  color:rgb(173, 173, 173);
+  padding: 5px;
+  align-self: center;
+  font-size: small;
+}
+
+.eval-bar {
+  width: 30px;
+  height: 480px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  outline: #777777 solid 1px;
+}
+
+.eval-bar-white{
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 50%;
+  background: #ffffff;
+  transition: height 0.4s ease;
+}
+
+.spinner-circle {
+  width: 32px;
+  height: 32px;
+  border: 4px solid #333;
+  border-top-color: #4a90d9;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+button {
+    color: white;
+    border: none;
+    font-size: large;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: var(--color-button);
+}
+
+button:hover{
+    background-color: var(--color-button-hover);
+}
