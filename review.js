@@ -24,8 +24,8 @@ const loadPGNButton = document.getElementById('btn-load-pgn');
 let history = [];
 let fens = [];
 let currentMoveIndex = 0;
-let evaluation = 0;
 let lastEval = '';
+let lastSavedEval = '';
 let stockfishReady = false;
 let depth = 14;
 
@@ -34,6 +34,10 @@ stockfish.onmessage = (event) => {
     const message = event.data;
 
     if (message === 'uciok'){
+        // Set UCI options BEFORE isready
+        stockfish.postMessage('setoption name Threads value 4');
+        stockfish.postMessage('setoption name Hash value 128');
+        stockfish.postMessage('setoption name MultiPV value 1');
         stockfish.postMessage('isready');
         return;
     }
@@ -51,18 +55,20 @@ stockfish.onmessage = (event) => {
 
 
         if (mateMatch) {
-            lastEval = {type: 'mate', value: parseInt(matMatch[1])};
+            lastEval = {type: 'mate', value: parseInt(mateMatch[1])};
         }
-        if (cpMatch) {
+        else if (cpMatch) {
             lastEval = {type: 'cp', value: parseInt(cpMatch[1])};
         }
     }
     else if (message.startsWith('bestmove')) {
+        if (!lastEval) return;
+
         const bestMove = message.split(' ')[1];
         console.log('Best move: ', bestMove);
-                    
+                
+        updateMoveInfo(bestMove, lastEval);
         updateEvalBar(lastEval);
-        updateMoveInfo(bestMove);
         showSpinner(false);
     };
 };
@@ -172,6 +178,7 @@ function prevMove() {
 
 function updateStockfish() {
     console.log('Analyzing move', currentMoveIndex, ':', fens[currentMoveIndex]);
+    lastEval = null;
     showSpinner(true);
     stockfish.postMessage('stop'); // stop current search
     stockfish.postMessage('position fen ' + fens[currentMoveIndex]);
@@ -186,9 +193,16 @@ function updateEvalBar(evaluation) {
     const evalText = document.getElementById('p-eval-text');
 
     const type = evaluation.type;
-    const value = evaluation.value;
+    const rawValue = evaluation.value;
 
-    console.log('Updating eval bar: ', type, value);
+    const currentFen = fens[currentMoveIndex];
+    const sideToMove = currentFen.split(' ')[1]; // 'w' for white, 'b' for black
+    
+    // Flip evaluation for Black's turn to match chess.com convention
+    // (positive = White winning, negative = Black winning)
+    const value = sideToMove === 'b' ? -rawValue : rawValue;
+
+    //console.log('Updating eval bar: ', type, rawValue, '->', value, '(side to move:', sideToMove + ')');
 
     if (type === 'cp'){
         const clamped = (Math.max(-1000, Math.min(1000, value)));
@@ -197,18 +211,30 @@ function updateEvalBar(evaluation) {
 
         const evalString = (value / 100).toFixed(1);
         evalText.textContent = evalString;
+
     }
     else if (type === 'mate'){
         const evalString = value > 0 ? `+M${value}` : `-M${Math.abs(value)}`;
         evalText.textContent = evalString;
-
         evalBar.style.height = value > 0 ? '100%' : '0%';
     }
 }
 
-function updateMoveInfo(bestMove) {
+function updateMoveInfo(bestMove, evaluation) {
     const currentMoveText = document.getElementById('p-current-move');
     const bestMoveText = document.getElementById('p-best-move');
+
+    const type = evaluation.type;
+    const rawValue = evaluation.value;
+
+    const currentFen = fens[currentMoveIndex];
+    const sideToMove = currentFen.split(' ')[1]; // 'w' for white, 'b' for black
+    
+    // Flip evaluation for Black's turn to match chess.com convention
+    // (positive = White winning, negative = Black winning)
+    const value = sideToMove === 'b' ? -rawValue : rawValue;
+
+    
 
     // show arrow
     const ctx = canvas.getContext('2d');
@@ -218,6 +244,23 @@ function updateMoveInfo(bestMove) {
     const fromCoords = squareToCoords(fromSquare);
     const toCoords = squareToCoords(toSquare);
     drawArrow(ctx, fromCoords, toCoords);
+
+    // compute move classification
+    let deltaEval = lastSavedEval - value;
+    console.log('Delta eval: ', deltaEval);
+    if (sideToMove === 'w') {
+        if (deltaEval < -200) { // blunder
+            //drawMarker(ctx, history[currentMoveIndex].to);
+        }
+    }
+    else if (sideToMove === 'b') {
+        if (deltaEval > 200) { // blunder
+            //drawMarker(ctx, history[currentMoveIndex].to);
+        }
+    }
+
+    // update lastSavedEval after drawing move on board
+    lastSavedEval = value;
 
     const bestMoveSAN = fens[currentMoveIndex] ? uciToSAN(fens[currentMoveIndex], bestMove) : 'N/A';
 
@@ -307,6 +350,17 @@ function drawArrow(ctx, from, to, color='rgba(0, 255, 0, 0.65)') {
     ctx.closePath();
     ctx.fillStyle = color;
     ctx.fill();
+    ctx.restore();
+}
+
+function drawMarker(ctx, square, color='rgba(255, 0, 0, 0.65)'){
+    const coords = squareToCoords(square);
+    const squareSize = boardSize / 8;
+    ctx.save();
+    ctx.arc(coords.x + (squareSize / 2) - 10, coords.y + (squareSize / 2) - 10, 15, 0, 2 * Math.PI);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.closePath();
     ctx.restore();
 }
 

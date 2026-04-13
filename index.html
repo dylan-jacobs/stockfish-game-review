@@ -20,18 +20,28 @@
         <div class="column-container" style="width: fit-content;">
             <h1>Stockfish Game Review</h1>
             <div class="row-container" style="width: fit-content;">
-            
-                <!-- Eval bar (vertical) -->
-                <div id="eval-bar" class="eval-bar">
-                    <div id="eval-white" class="eval-bar-white"></div>
-                    <p id="p-eval-text" class="eval-text">0.0</p>
+                <div class="column-container outline">
+                        <!-- Eval bar (vertical) -->
+                        <div class="row-container">
+                            <div id="eval-bar" class="eval-bar">
+                                <div id="eval-white" class="eval-bar-white"></div>
+                                <p id="p-eval-text" class="eval-text">0.0</p>
+                            </div>
+                        <div id="board-wrapper" style="position: relative; width: 500px;">
+                            <div id="board1" style="width: 500px"></div>
+                            <canvas id="canvas-chessboard" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+                        </div>
+                    </div>
+                    <div class="row-container" style="width: 650px; justify-content: center;">
+                        <button id="btn-prev" onclick="prevMove()">Previous Move</button>
+                        <button id="btn-next" onclick="nextMove()">Next Move</button>
+                        <button id="btn-reset" onclick="resetGame()">Reset Game</button>
+                    </div>
                 </div>
 
-                <div id="board-wrapper" style="position: relative; width: 500px;">
-                    <div id="board1" style="width: 500px"></div>
-                    <canvas id="canvas-chessboard" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
-                </div>
-                <div class="column-container" style="display: flex; flex-direction: column;">
+
+
+                <div class="column-container outline" style="display: flex; flex-direction: column;">
                     <h2>Game Info</h2>
                     <p id="p-current-move">Current move: </p>
                     <p id="p-best-move">Best move: </p>
@@ -65,11 +75,6 @@
                         <button id="btn-load-pgn" onclick="loadPGN()">Load Game</button>
                     </div>
                 </div>
-            </div>
-            <div class="row-container" style="width: 650px; justify-content: center;">
-                <button id="btn-prev" onclick="prevMove()">Previous Move</button>
-                <button id="btn-next" onclick="nextMove()">Next Move</button>
-                <button id="btn-reset" onclick="resetGame()">Reset Game</button>
             </div>
         </div>
     </body>
