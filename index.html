@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stockfish Game Review</title>
+    <title>Dylan's Epic Game Review</title>
     <link rel="stylesheet" href="style.css">
     <!-- jQuery (required by chessboard.js) -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -17,8 +17,8 @@
 
 </head>
     <body>
-        <div class="column-container">
-            <h1>Dylan's Epic Game Review</h1>
+        <div class="column-container" style="width: fit-content;">
+            <h1>Stockfish Game Review</h1>
             <div class="row-container" style="width: fit-content;">
             
                 <!-- Eval bar (vertical) -->
@@ -44,6 +44,22 @@
                     <div id="spinner" style="display: none">
                         <div class="spinner-circle"></div>
                     </div>
+                    <table class="scrolldown">
+                        <thead>
+                            <tr>
+                                <th>Move</th>
+                                <th>White</th>
+                                <th>Black</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1.</td>
+                                <td>e4</td>
+                                <td>e5</td>
+                            </tr>
+                        </tbody>
+                    </table>
                     <div class="row-container" style="margin-top: auto; width: fit-content;">
                         <textarea id="input-pgn" rows="10" cols="40"placeholder="Enter PGN string to review a new game"></textarea>
                         <button id="btn-load-pgn" onclick="loadPGN()">Load Game</button>

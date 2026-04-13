@@ -133,3 +133,26 @@ button {
 button:hover{
     background-color: var(--color-button-hover);
 }
+
+table.scrolldown {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin-top: 10px;
+}
+
+table.scrolldown thead,
+table.scrolldown tbody {
+  display: block;
+}
+
+table.scrolldown tbody {
+  height: 200px;
+  border-top: 2px solid black;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+tbody td, thead th {
+  width: 100px;
+  text-align: left;
+}

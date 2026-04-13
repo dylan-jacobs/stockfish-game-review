@@ -122,7 +122,7 @@ function loadPGN() {
             fens.push(chess.fen()); // push next position
         });
         resetGame();
-
+        updateMoveList();
     }
     else{
         console.error('Failed to load PGN');
@@ -179,11 +179,14 @@ function updateStockfish() {
 }
 
 function updateEvalBar(evaluation) {
+
+    if (currentMoveIndex < 0 || currentMoveIndex >= fens.length) return;
+
     const evalBar = document.getElementById('eval-white');
     const evalText = document.getElementById('p-eval-text');
 
-    type = evaluation.type;
-    value = evaluation.value;
+    const type = evaluation.type;
+    const value = evaluation.value;
 
     console.log('Updating eval bar: ', type, value);
 
@@ -192,7 +195,7 @@ function updateEvalBar(evaluation) {
         const pct = 50 + 50*(clamped / 1000);
         evalBar.style.height = pct + '%';
 
-        evalString = (value / 100).toFixed(1);
+        const evalString = (value / 100).toFixed(1);
         evalText.textContent = evalString;
     }
     else if (type === 'mate'){
@@ -220,6 +223,29 @@ function updateMoveInfo(bestMove) {
 
     currentMoveText.textContent = `Current move: ${history[currentMoveIndex].san}`;
     bestMoveText.textContent = `Best move: ${bestMoveSAN}`;
+}
+
+function updateMoveList() {
+    const moveListTableBody = document.querySelector('.scrolldown tbody');
+    moveListTableBody.innerHTML = ''; // clear existing moves
+
+    for (let i = 0; i < history.length; i += 2) {
+        const moveNumber = Math.floor(i / 2) + 1;
+        const whiteMove = history[i] ? history[i].san : '';
+        const blackMove = history[i + 1] ? history[i + 1].san : '';
+
+        let row = document.createElement('tr');
+        let moveCell = document.createElement('td');
+        let whiteCell = document.createElement('td');
+        let blackCell = document.createElement('td');
+        moveCell.textContent = `${moveNumber}.`;
+        whiteCell.textContent = whiteMove;
+        blackCell.textContent = blackMove;
+        row.appendChild(moveCell);
+        row.appendChild(whiteCell);
+        row.appendChild(blackCell);
+        moveListTableBody.appendChild(row);
+    }
 }
 
 function uciToSAN(fen, uciMove) {
