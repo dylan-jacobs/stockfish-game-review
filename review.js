@@ -7,18 +7,6 @@ const board = Chessboard('board1',
 });
 const chess = new Chess();
 const stockfish = new Worker('stockfish.js');
-const canvas = document.getElementById('canvas-chessboard');
-const depthSlider = document.getElementById('depth-slider');
-const depthLabel = document.getElementById('depth-label');
-depthSlider.value = localStorage.getItem('analysisDepth') || 14;
-depthLabel.textContent = `Depth: ${depthSlider.value}`;
-
-const boardSize = 500;
-canvas.width = boardSize;
-canvas.height = boardSize;
-
-const pgnInput = document.getElementById('input-pgn');
-const loadPGNButton = document.getElementById('btn-load-pgn');
 
 
 let history = [];
@@ -27,7 +15,22 @@ let currentMoveIndex = 0;
 let lastEval = '';
 let lastSavedEval = '';
 let stockfishReady = false;
-let depth = 14;
+let depth = localStorage.getItem('analysisDepth') || 14;
+let evaluations = [];
+
+
+const canvas = document.getElementById('canvas-chessboard');
+const depthSlider = document.getElementById('depth-slider');
+const depthLabel = document.getElementById('depth-label');
+depthSlider.value = depth;
+depthLabel.textContent = `Depth: ${depthSlider.value}`;
+
+const boardSize = 500;
+canvas.width = boardSize;
+canvas.height = boardSize;
+
+const pgnInput = document.getElementById('input-pgn');
+const loadPGNButton = document.getElementById('btn-load-pgn');
 
 // handle received messages from Stockfish
 stockfish.onmessage = (event) => {
@@ -67,7 +70,7 @@ stockfish.onmessage = (event) => {
         const bestMove = message.split(' ')[1];
         console.log('Best move: ', bestMove);
                 
-        updateMoveInfo(bestMove, lastEval);
+        updateMoveInfo(bestMove);
         updateEvalBar(lastEval);
         showSpinner(false);
     };
@@ -202,6 +205,12 @@ function updateEvalBar(evaluation) {
     // (positive = White winning, negative = Black winning)
     const value = sideToMove === 'b' ? -rawValue : rawValue;
 
+    if (evaluations.length <= currentMoveIndex) {
+        evaluations.push(value);
+    } else{
+        evaluations[currentMoveIndex] = value;
+    }
+
     //console.log('Updating eval bar: ', type, rawValue, '->', value, '(side to move:', sideToMove + ')');
 
     if (type === 'cp'){
@@ -220,21 +229,9 @@ function updateEvalBar(evaluation) {
     }
 }
 
-function updateMoveInfo(bestMove, evaluation) {
+function updateMoveInfo(bestMove) {
     const currentMoveText = document.getElementById('p-current-move');
     const bestMoveText = document.getElementById('p-best-move');
-
-    const type = evaluation.type;
-    const rawValue = evaluation.value;
-
-    const currentFen = fens[currentMoveIndex];
-    const sideToMove = currentFen.split(' ')[1]; // 'w' for white, 'b' for black
-    
-    // Flip evaluation for Black's turn to match chess.com convention
-    // (positive = White winning, negative = Black winning)
-    const value = sideToMove === 'b' ? -rawValue : rawValue;
-
-    
 
     // show arrow
     const ctx = canvas.getContext('2d');
@@ -243,24 +240,37 @@ function updateMoveInfo(bestMove, evaluation) {
     const toSquare = bestMove.slice(2, 4);
     const fromCoords = squareToCoords(fromSquare);
     const toCoords = squareToCoords(toSquare);
-    drawArrow(ctx, fromCoords, toCoords);
+    drawArrow(ctx, fromCoords, toCoords, color='rgba(0, 255, 0, 0.65)');
 
     // compute move classification
-    let deltaEval = lastSavedEval - value;
-    console.log('Delta eval: ', deltaEval);
-    if (sideToMove === 'w') {
-        if (deltaEval < -200) { // blunder
-            //drawMarker(ctx, history[currentMoveIndex].to);
+    const currentFen = fens[currentMoveIndex - 1];
+    const sideToMove = currentFen.split(' ')[1]; // 'w' for white, 'b' for black
+    let deltaEval = (evaluations[currentMoveIndex - 2] || 0) - (evaluations[currentMoveIndex - 3] || 0);
+    console.log('Current turn: ', sideToMove, 'Delta: ', deltaEval);
+    let moveColor = 'rgba(0, 255, 0, 0.85)';
+    if (sideToMove === 'b') {
+        if (deltaEval > 300) { // blunder
+            moveColor = 'rgba(255, 0, 0, 0.85)';
+        } else if (deltaEval > 50) {
+            moveColor = 'rgba(255, 165, 0, 0.85)'; // mistake
+        } else if (deltaEval > 20) { 
+            moveColor = 'rgba(217, 250, 0, 0.85)'; // inaccuracy
+        } else {
+            moveColor = 'rgba(6, 183, 0, 0.85)'; // good
         }
     }
-    else if (sideToMove === 'b') {
-        if (deltaEval > 200) { // blunder
-            //drawMarker(ctx, history[currentMoveIndex].to);
+    else if (sideToMove === 'w') {
+        if (deltaEval < -300) { // blunder
+            moveColor = 'rgba(255, 0, 0, 0.85)';
+        } else if (deltaEval < -50) {
+            moveColor = 'rgba(255, 165, 0, 0.85)'; // inaccuracy
+        } else if (deltaEval < -20) {
+            moveColor = 'rgba(217, 250, 0, 0.85)'; // inaccuracy
+        } else {
+            moveColor = 'rgba(6, 183, 0, 0.85)'; // good
         }
     }
-
-    // update lastSavedEval after drawing move on board
-    lastSavedEval = value;
+    drawMarker(ctx, history[currentMoveIndex - 1].to, color=moveColor);
 
     const bestMoveSAN = fens[currentMoveIndex] ? uciToSAN(fens[currentMoveIndex], bestMove) : 'N/A';
 
@@ -347,17 +357,18 @@ function drawArrow(ctx, from, to, color='rgba(0, 255, 0, 0.65)') {
     ctx.lineTo(endX - headLength * Math.cos(angle - Math.PI / 2), endY - headLength * Math.sin(angle - Math.PI / 2));
     ctx.lineTo(to.x, to.y);
     ctx.lineTo(endX + headLength * Math.cos(angle - Math.PI / 2), endY + headLength * Math.sin(angle - Math.PI / 2));
-    ctx.closePath();
     ctx.fillStyle = color;
+    ctx.closePath();
     ctx.fill();
     ctx.restore();
 }
 
-function drawMarker(ctx, square, color='rgba(255, 0, 0, 0.65)'){
+function drawMarker(ctx, square, color='rgba(255, 0, 0, 0.85)'){
     const coords = squareToCoords(square);
     const squareSize = boardSize / 8;
     ctx.save();
-    ctx.arc(coords.x + (squareSize / 2) - 10, coords.y + (squareSize / 2) - 10, 15, 0, 2 * Math.PI);
+    ctx.beginPath();
+    ctx.arc(coords.x + (squareSize / 2) - 10, coords.y + (squareSize / 2) - 10, 10, 0, 2 * Math.PI);
     ctx.fillStyle = color;
     ctx.fill();
     ctx.closePath();
