@@ -12,6 +12,7 @@ const stockfish = new Worker('stockfish.js');
 let history = [];
 let fens = [];
 let currentMoveIndex = 0;
+let currentBestMove = '';
 let lastEval = '';
 let lastSavedEval = '';
 let stockfishReady = false;
@@ -67,12 +68,14 @@ stockfish.onmessage = (event) => {
     else if (message.startsWith('bestmove')) {
         if (!lastEval) return;
 
-        const bestMove = message.split(' ')[1];
-        console.log('Best move: ', bestMove);
+        const nextBestMove = message.split(' ')[1];
+        console.log('Next best move: ', nextBestMove, 'Current best move: ', currentBestMove);
                 
-        updateMoveInfo(bestMove);
+        updateMoveInfo(currentBestMove, nextBestMove);
         updateEvalBar(lastEval);
         showSpinner(false);
+
+        currentBestMove = nextBestMove;
     };
 };
 
@@ -229,31 +232,42 @@ function updateEvalBar(evaluation) {
     }
 }
 
-function updateMoveInfo(bestMove) {
+function updateMoveInfo(bestMove, nextBestMove) {
     const currentMoveText = document.getElementById('p-current-move');
     const bestMoveText = document.getElementById('p-best-move');
 
     // show arrow
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const fromSquare = bestMove.slice(0, 2);
-    const toSquare = bestMove.slice(2, 4);
+    const fromSquare = nextBestMove.slice(0, 2);
+    const toSquare = nextBestMove.slice(2, 4);
     const fromCoords = squareToCoords(fromSquare);
     const toCoords = squareToCoords(toSquare);
     drawArrow(ctx, fromCoords, toCoords, color='rgba(0, 255, 0, 0.65)');
 
+    const bestMoveSAN = fens[currentMoveIndex - 1] ? uciToSAN(fens[currentMoveIndex - 1], bestMove) : 'N/A';
+
+    if (currentMoveIndex <= 0) return;
+    currentMoveText.textContent = `Current move: ${history[currentMoveIndex - 1].san}`;
+    bestMoveText.textContent = `Best move: ${bestMoveSAN}`;
+
     // compute move classification
     const currentFen = fens[currentMoveIndex - 1];
+    if (!currentFen) return;
+
     const sideToMove = currentFen.split(' ')[1]; // 'w' for white, 'b' for black
     let deltaEval = (evaluations[currentMoveIndex - 2] || 0) - (evaluations[currentMoveIndex - 3] || 0);
     console.log('Current turn: ', sideToMove, 'Delta: ', deltaEval);
     let moveColor = 'rgba(0, 255, 0, 0.85)';
-    if (sideToMove === 'b') {
+    if (currentMoveIndex > 0 && history[currentMoveIndex - 1].san === bestMoveSAN) {
+        moveColor = 'rgba(6, 183, 0, 0.85)'; // good
+    }
+    else if (sideToMove === 'b') {
         if (deltaEval > 300) { // blunder
             moveColor = 'rgba(255, 0, 0, 0.85)';
-        } else if (deltaEval > 50) {
+        } else if (deltaEval > 150) {
             moveColor = 'rgba(255, 165, 0, 0.85)'; // mistake
-        } else if (deltaEval > 20) { 
+        } else if (deltaEval > 50) { 
             moveColor = 'rgba(217, 250, 0, 0.85)'; // inaccuracy
         } else {
             moveColor = 'rgba(6, 183, 0, 0.85)'; // good
@@ -262,20 +276,15 @@ function updateMoveInfo(bestMove) {
     else if (sideToMove === 'w') {
         if (deltaEval < -300) { // blunder
             moveColor = 'rgba(255, 0, 0, 0.85)';
-        } else if (deltaEval < -50) {
+        } else if (deltaEval < -150) {
             moveColor = 'rgba(255, 165, 0, 0.85)'; // inaccuracy
-        } else if (deltaEval < -20) {
+        } else if (deltaEval < -50) {
             moveColor = 'rgba(217, 250, 0, 0.85)'; // inaccuracy
         } else {
             moveColor = 'rgba(6, 183, 0, 0.85)'; // good
         }
     }
     drawMarker(ctx, history[currentMoveIndex - 1].to, color=moveColor);
-
-    const bestMoveSAN = fens[currentMoveIndex] ? uciToSAN(fens[currentMoveIndex], bestMove) : 'N/A';
-
-    currentMoveText.textContent = `Current move: ${history[currentMoveIndex].san}`;
-    bestMoveText.textContent = `Best move: ${bestMoveSAN}`;
 }
 
 function updateMoveList() {
@@ -378,4 +387,49 @@ function drawMarker(ctx, square, color='rgba(255, 0, 0, 0.85)'){
 function showSpinner(show) {
     const spinner = document.getElementById('spinner');
     spinner.style.display = show ? 'block' : 'none';
+}
+
+function createGamePopup(games) {
+    const popup = document;
+}
+
+function loadChessProfile() {
+    const username = document.getElementById("input-chess-username").value;
+
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1)
+    let monthString = month.toString();
+    if (month.toString().length === 1) {
+        monthString = '0' + month;
+    }
+
+    const lastMonth = month - 1 != 0 ? month - 1 : 12;
+    let lastYear = year;
+    let lastMonthString = lastMonth.toString();
+    let lastYearString = year.toString();
+    if (lastMonth.toString().length === 1) {
+        lastMonthString = '0' + lastMonth;
+        lastYearString = lastYear.toString();
+    }
+    if (lastMonth === 12) {
+        lastYear = year - 1;
+    }
+
+    const totalGames = [];
+    fetch(`https://api.chess.com/pub/player/${username}/games/${lastYearString}/${lastMonthString}`)
+        .then(res => res.json())
+        .then(lastMonthData => {
+            //console.log(lastMonthData);
+            lastMonthData.games.forEach((game) => {totalGames.push(game)});
+            fetch(`https://api.chess.com/pub/player/${username}/games/${year}/${monthString}`)
+                .then(res => res.json())
+                .then(monthData => {
+                    //console.log(monthData);
+                    monthData.games.forEach((game) => {totalGames.push(game)});
+
+                    console.log(totalGames);
+                });
+        });
+    
 }
